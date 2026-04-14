@@ -65,9 +65,9 @@ Response:
 
 ## Frontend env
 
-In the Next.js project root:
+In the Next.js project (`frontend/`):
 
 ```
-# .env.local
+# frontend/.env.local
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```

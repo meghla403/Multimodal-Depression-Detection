@@ -23,11 +23,12 @@ API_DESCRIPTION = """
 Multimodal Depression Detection API.
 
 A research-focused service that runs the trained Keras model
-(`depression_model.h5`) over uploaded **audio** and/or **video** clips and
-returns a depression-likelihood label with confidence breakdowns.
+(`depression_model.h5`) over an uploaded **video clip** and returns a
+depression-likelihood label. Both audio and visual features are extracted
+from the same video file — matching the D-Vlog training distribution.
 
 * **Model:** D-Vlog champion checkpoint (Keras 3.10) — audio `(1, 25)` + video `(1, 136)`
-* **Audio features:** librosa MFCC, mean-pooled across time
+* **Audio features:** OpenSMILE eGeMAPSv02 LLDs, mean-pooled across time (from the video's audio track)
 * **Video features:** MediaPipe FaceMesh landmarks (68 × xy), mean-pooled across frames
 
 Open `/docs` for the Swagger UI or `/redoc` for ReDoc.
@@ -136,46 +137,51 @@ def _label_for(score: float) -> tuple[str, str]:
 @app.post(
     "/predict",
     tags=["inference"],
-    summary="Run depression prediction on audio and/or video",
+    summary="Run depression prediction on a video clip",
     description=(
-        "Upload at least one of `audio` or `video` (multipart form data). "
-        "The server extracts features, runs the multimodal Keras model, and "
-        "returns a label + confidence breakdown."
+        "Upload one `video` file (multipart form data). The server extracts "
+        "**both** acoustic features (from the video's audio track) and facial "
+        "features (via MediaPipe FaceMesh) from the same file, then runs the "
+        "multimodal Keras model. This matches the D-Vlog training distribution "
+        "where audio and video always come from the same clip."
     ),
     response_model=PredictionResponse,
     responses={
-        400: {"model": ErrorResponse, "description": "No media supplied."},
+        400: {"model": ErrorResponse, "description": "No video supplied."},
         500: {"model": ErrorResponse, "description": "Inference failure."},
     },
 )
 async def predict(
-    audio: Annotated[
-        Optional[UploadFile],
-        File(description="Audio file (mp3, wav, ogg, ...)."),
-    ] = None,
     video: Annotated[
         Optional[UploadFile],
-        File(description="Video file (mp4, mov, webm, ...)."),
+        File(description="Video file with audio track (mp4, mov, webm, ...)."),
+    ] = None,
+    audio: Annotated[
+        Optional[UploadFile],
+        File(
+            description=(
+                "Optional separate audio file. Only used when no video is provided "
+                "(audio-only fallback — video features will be zero-filled)."
+            ),
+        ),
     ] = None,
 ):
-    if audio is None and video is None:
-        raise HTTPException(status_code=400, detail="Provide at least one of audio or video.")
+    if video is None and audio is None:
+        raise HTTPException(status_code=400, detail="Provide a video file.")
 
     svc = get_service()
 
-    audio_path: Path | None = None
     video_path: Path | None = None
+    audio_path: Path | None = None
     try:
-        if audio is not None:
-            audio_path = _save_upload(audio, suffix=Path(audio.filename or "in.wav").suffix or ".wav")
-            audio_seq = extract_audio_features(audio_path, svc.audio_dim, svc.audio_time)
-        else:
-            audio_seq = zero_sequence(svc.audio_dim, svc.audio_time)
-
         if video is not None:
             video_path = _save_upload(video, suffix=Path(video.filename or "in.mp4").suffix or ".mp4")
+            # Same source file — librosa reads the audio track via ffmpeg/audioread.
+            audio_seq = extract_audio_features(video_path, svc.audio_dim, svc.audio_time)
             video_seq = extract_video_features(video_path, svc.video_dim, svc.video_time)
         else:
+            audio_path = _save_upload(audio, suffix=Path(audio.filename or "in.wav").suffix or ".wav")
+            audio_seq = extract_audio_features(audio_path, svc.audio_dim, svc.audio_time)
             video_seq = zero_sequence(svc.video_dim, svc.video_time)
 
         score = svc.predict(audio_seq, video_seq)
@@ -187,7 +193,7 @@ async def predict(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}") from e
     finally:
-        for p in (audio_path, video_path):
+        for p in (video_path, audio_path):
             if p and p.exists():
                 try:
                     p.unlink()

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
 import type { PredictionResult } from "@/types/prediction";
 import { PREDICTION_SEVERITY, SEVERITY_STYLES } from "@/utils/constants";
 import AnimatedReveal from "@/components/common/AnimatedReveal";
@@ -15,18 +14,6 @@ export default function ResultCard({ result, onReset }: ResultCardProps) {
   const severity = PREDICTION_SEVERITY[result.prediction] ?? "moderate";
   const styles = SEVERITY_STYLES[severity];
   const isPositive = severity === "high";
-
-  const depressedPct = Math.max(0, Math.min(100, result.depressed_pct ?? 0));
-  const notDepressedPct = Math.max(0, Math.min(100, result.not_depressed_pct ?? 0));
-
-  const [animPct, setAnimPct] = useState({ dep: 0, nondep: 0 });
-  useEffect(() => {
-    const t = setTimeout(
-      () => setAnimPct({ dep: depressedPct, nondep: notDepressedPct }),
-      120,
-    );
-    return () => clearTimeout(t);
-  }, [depressedPct, notDepressedPct]);
 
   return (
     <AnimatedReveal direction="zoom" duration={800}>
@@ -65,22 +52,6 @@ export default function ResultCard({ result, onReset }: ResultCardProps) {
           <p className="max-w-md text-sm text-muted">{result.message}</p>
         </div>
 
-        {/* Confidence breakdown */}
-        <div className="mx-auto mt-8 max-w-xl space-y-4">
-          <ConfidenceBar
-            label="Depressed"
-            pct={depressedPct}
-            animPct={animPct.dep}
-            tone="danger"
-          />
-          <ConfidenceBar
-            label="Not Depressed"
-            pct={notDepressedPct}
-            animPct={animPct.nondep}
-            tone="success"
-          />
-        </div>
-
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <button type="button" onClick={onReset} className="btn-primary">
             Run Another Prediction
@@ -101,51 +72,5 @@ export default function ResultCard({ result, onReset }: ResultCardProps) {
         </p>
       </div>
     </AnimatedReveal>
-  );
-}
-
-function ConfidenceBar({
-  label,
-  pct,
-  animPct,
-  tone,
-}: {
-  label: string;
-  pct: number;
-  animPct: number;
-  tone: "danger" | "success";
-}) {
-  const fillRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = fillRef.current;
-    if (!el) return;
-    el.style.width = `${animPct}%`;
-  }, [animPct]);
-
-  const trackTone = tone === "danger" ? "bg-red-500/10" : "bg-emerald-500/10";
-  const fillTone =
-    tone === "danger"
-      ? "bg-gradient-to-r from-red-500 via-rose-500 to-red-400"
-      : "bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500";
-  const textTone = tone === "danger" ? "text-red-300" : "text-emerald-300";
-
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between text-xs font-medium">
-        <span className="text-ink">{label}</span>
-        <span className={`font-mono font-semibold tabular-nums ${textTone}`}>
-          {pct.toFixed(1)}%
-        </span>
-      </div>
-      <div
-        className={`relative h-2.5 w-full overflow-hidden rounded-full ${trackTone}`}
-      >
-        <div
-          ref={fillRef}
-          className={`modality-bar h-full w-0 rounded-full ${fillTone}`}
-        />
-      </div>
-    </div>
   );
 }

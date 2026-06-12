@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: depression-detection-api
+    runtime: docker
+    rootDir: backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: CORS_ORIGINS
+        value: https://multimodal-depression-detection.vercel.app

@@ -5,11 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { APP_TAGLINE, NAV_LINKS } from "@/utils/constants";
+import ThemePicker from "@/components/common/ThemePicker";
+import ModeToggle from "@/components/common/ModeToggle";
+import LanguageToggle from "@/components/common/LanguageToggle";
+import { useI18n } from "@/components/common/I18nProvider";
+
+const NAV_TRANSLATION_KEYS = {
+  "/": "nav.home",
+  "/predict": "nav.predict",
+  "/about": "nav.about",
+} as const;
 
 const STAGGER = ["", "delay-80", "delay-160", "delay-240", "delay-320"];
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -62,6 +73,8 @@ export default function Navbar() {
         <ul className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full border border-border bg-surface-2/60 p-1 backdrop-blur-md md:flex">
           {NAV_LINKS.map((l) => {
             const active = pathname === l.href;
+            const key = NAV_TRANSLATION_KEYS[l.href as keyof typeof NAV_TRANSLATION_KEYS];
+            const label = key ? t(key) : l.label;
             return (
               <li key={l.href}>
                 <Link
@@ -79,7 +92,7 @@ export default function Navbar() {
                       className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(34,197,94,0.7)]"
                     />
                   )}
-                  {l.label}
+                  {label}
                 </Link>
               </li>
             );
@@ -88,6 +101,11 @@ export default function Navbar() {
 
         {/* Right: CTA + mobile toggle */}
         <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
+            <LanguageToggle />
+            <ModeToggle />
+            <ThemePicker />
+          </div>
           <Link
             href="/predict"
             className="hidden items-center gap-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 px-5 py-2 text-sm font-semibold text-black shadow-soft transition-all duration-300 hover:shadow-glow md:inline-flex"
@@ -113,7 +131,7 @@ export default function Navbar() {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open ? "true" : "false"}
+            aria-expanded={open === true}
             className="relative grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface-2 text-ink transition-colors duration-200 hover:border-primary/50 hover:text-primary md:hidden"
           >
             <span className="sr-only">Menu</span>

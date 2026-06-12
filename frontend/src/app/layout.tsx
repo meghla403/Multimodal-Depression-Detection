@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
+import FeedbackWidget from "@/components/common/FeedbackWidget";
+import { ThemeProvider } from "@/components/common/ThemeProvider";
+import { I18nProvider } from "@/components/common/I18nProvider";
 import { APP_NAME, APP_TAGLINE } from "@/utils/constants";
 
 export const metadata: Metadata = {
@@ -18,9 +21,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col font-sans">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <ThemeProvider>
+          <I18nProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <FeedbackWidget />
+          </I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,7 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useI18n } from "@/components/common/I18nProvider";
 
 export default function HeroSection() {
+  const { t, lang } = useI18n();
   return (
     <section className="relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 pt-12 sm:pt-16">
@@ -37,31 +41,40 @@ export default function HeroSection() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                 </span>
-                Research demo · Powered by multimodal deep learning
+                {t("hero.badge")}
               </span>
 
               <h1
                 className="animate-fade-up delay-80 mt-6 text-4xl font-extrabold leading-tight tracking-tight text-ink sm:text-5xl md:text-6xl"
-                aria-label="Multimodal Depression Detection System"
+                aria-label={t("hero.titlePrefix") + t("hero.titleGradient")}
+                key={lang + t("hero.titlePrefix")}
               >
-                <WaveText text="Multimodal " />
-                <WaveText
-                  text="Depression Detection System"
-                  className="gradient-text"
-                  offset={"Multimodal ".length}
-                />
+                {lang === "en" ? (
+                  <>
+                    <WaveText text={t("hero.titlePrefix")} />
+                    <WaveText
+                      text={t("hero.titleGradient")}
+                      className="gradient-text"
+                      offset={t("hero.titlePrefix").length}
+                    />
+                  </>
+                ) : (
+                  <>
+                    {t("hero.titlePrefix")}
+                    <span className="gradient-text">
+                      {t("hero.titleGradient")}
+                    </span>
+                  </>
+                )}
               </h1>
 
               <p className="animate-fade-up delay-160 mt-6 max-w-2xl text-base text-muted sm:text-lg">
-                Multimodal depression detection using audio and video signals.
-                Our model fuses vocal, facial, and emotional cues to deliver a
-                fast, research-grade assessment — in a privacy-conscious
-                interface.
+                {t("hero.description")}
               </p>
 
               <div className="animate-fade-up delay-240 mt-8 flex flex-col items-center gap-3 sm:flex-row">
                 <Link href="/predict" className="btn-primary">
-                  Start Prediction
+                  {t("hero.start")}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -77,15 +90,43 @@ export default function HeroSection() {
                   </svg>
                 </Link>
                 <Link href="/about" className="btn-outline">
-                  Learn More
+                  {t("hero.learn")}
                 </Link>
               </div>
 
+              {/* Trust / stats strip */}
+              <div className="animate-fade-up delay-320 mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-muted">
+                <HeroStat label={t("hero.latency")} value={t("hero.latencyValue")} />
+                <HeroDivider />
+                <HeroStat label={t("hero.modalities")} value={t("hero.modalitiesValue")} />
+                <HeroDivider />
+                <HeroStat label={t("hero.storage")} value={t("hero.storageValue")} />
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function HeroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="inline-flex flex-col items-center leading-tight">
+      <span className="font-mono text-sm font-semibold text-primary">{value}</span>
+      <span className="text-[10px] uppercase tracking-wider text-muted/70">
+        {label}
+      </span>
+    </span>
+  );
+}
+
+function HeroDivider() {
+  return (
+    <span
+      aria-hidden="true"
+      className="hidden h-8 w-px bg-border sm:inline-block"
+    />
   );
 }
 

@@ -140,7 +140,7 @@ export default function UploadCard({ kind, file, onChange }: UploadCardProps) {
             <video
               controls
               src={previewUrl}
-              className="max-h-48 w-full rounded-lg bg-black object-cover"
+              className="max-h-80 w-full rounded-lg bg-black object-contain"
             >
               <track kind="captions" />
             </video>
